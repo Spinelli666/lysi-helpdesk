@@ -1,20 +1,18 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { PanelLeft as PanelLeftIcon, PanelLeftClose as PanelLeftCloseIcon } from 'lucide-react'
 import { SidebarNav } from './sidebar-nav'
 import { UserMenu } from './user-menu'
+import { LysiWordmark } from '@/components/logo'
 
 const STORAGE_KEY = 'lysi-sidebar-open'
 
 export function DashboardShell({
-  role,
   userName,
   userRole,
   children,
 }: {
-  role: string
   userName: string
   userRole: string
   children: React.ReactNode
@@ -38,22 +36,19 @@ export function DashboardShell({
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
         {sidebarOpen && (
-          <aside
-            className="w-56 shrink-0 min-h-screen px-4 py-6"
-            style={{ backgroundColor: '#008A83', border: 'none', borderRight: '4px solid rgb(213, 51, 32)' }}
-          >
-            <Link href="/tickets" className="block w-fit mb-[100px] text-white font-bold text-xl">
-              Lýsi
-            </Link>
-            <SidebarNav role={role} />
+          <aside className="w-56 shrink-0 min-h-screen px-4 py-6 bg-sidebar text-sidebar-foreground">
+            <LysiWordmark
+              className="mb-[100px] text-sidebar-foreground"
+              markVariant="mono"
+              markClassName="h-7 w-7"
+              textClassName="text-lg"
+            />
+            <SidebarNav />
           </aside>
         )}
 
         <main className="flex-1 min-w-0">
-          <header
-            className="px-6 py-4 flex justify-between items-center"
-            style={{ backgroundColor: '#008A83', borderBottom: '4px solid rgb(213, 51, 32)' }}
-          >
+          <header className="px-6 py-4 flex justify-between items-center bg-sidebar text-sidebar-foreground border-b border-sidebar-border">
             <button
               type="button"
               onClick={toggleSidebar}

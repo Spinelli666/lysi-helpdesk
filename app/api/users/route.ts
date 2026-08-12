@@ -1,12 +1,13 @@
 import { auth } from '@/app/lib/auth'
 import { prisma } from '@/app/lib/prisma'
 import { NextResponse } from 'next/server'
+import { isValidEmail, isAllowedEmailDomain, ALLOWED_EMAIL_DOMAIN } from '@/app/lib/validate-email'
 import bcrypt from 'bcryptjs'
 
 export async function GET() {
   const session = await auth()
 
-  if (!session || session.user.role !== 'ADMIN') {
+  if (!session) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
@@ -28,7 +29,7 @@ export async function GET() {
 export async function POST(req: Request) {
   const session = await auth()
 
-  if (!session || session.user.role !== 'ADMIN') {
+  if (!session) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
@@ -37,6 +38,13 @@ export async function POST(req: Request) {
 
   if (!name?.trim() || !email?.trim() || !password || !role) {
     return NextResponse.json({ error: 'Campos obrigatórios faltando' }, { status: 400 })
+  }
+
+  if (!isValidEmail(email) || !isAllowedEmailDomain(email)) {
+    return NextResponse.json(
+      { error: `O email deve ser um endereço válido do domínio @${ALLOWED_EMAIL_DOMAIN}` },
+      { status: 400 }
+    )
   }
 
   const exists = await prisma.user.findUnique({ where: { email } })

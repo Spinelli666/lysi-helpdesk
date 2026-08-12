@@ -13,14 +13,14 @@ export async function PATCH(
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const user = await prisma.user.findUnique({ where: { id } })
-  if (!user) {
-    return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
+  const employee = await prisma.employee.findUnique({ where: { id } })
+  if (!employee) {
+    return NextResponse.json({ error: 'Funcionário não encontrado' }, { status: 404 })
   }
 
-  const updated = await prisma.user.update({
+  const updated = await prisma.employee.update({
     where: { id },
-    data: { active: !user.active },
+    data: { active: !employee.active },
     select: { id: true, active: true },
   })
 

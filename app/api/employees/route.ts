@@ -9,12 +9,11 @@ export async function GET() {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const subjects = await prisma.subject.findMany({
-    where: { active: true },
+  const employees = await prisma.employee.findMany({
     orderBy: { name: 'asc' },
   })
 
-  return NextResponse.json(subjects)
+  return NextResponse.json(employees)
 }
 
 export async function POST(req: Request) {
@@ -25,18 +24,21 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json()
-  const { name } = body
+  const { name, project, unit, department, position } = body
 
   if (!name?.trim()) {
     return NextResponse.json({ error: 'Nome é obrigatório' }, { status: 400 })
   }
 
-  const exists = await prisma.subject.findUnique({ where: { name } })
-  if (exists) {
-    return NextResponse.json({ error: 'Assunto já existe' }, { status: 400 })
-  }
+  const employee = await prisma.employee.create({
+    data: {
+      name: name.trim(),
+      project: project || null,
+      unit: Array.isArray(unit) ? unit : [],
+      department: department || null,
+      position: position || null,
+    },
+  })
 
-  const subject = await prisma.subject.create({ data: { name } })
-
-  return NextResponse.json(subject, { status: 201 })
+  return NextResponse.json(employee, { status: 201 })
 }

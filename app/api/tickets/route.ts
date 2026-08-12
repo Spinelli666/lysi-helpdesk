@@ -14,6 +14,7 @@ export async function GET() {
     include: {
       createdBy: { select: { id: true, name: true } },
       subject: { select: { id: true, name: true } },
+      employee: { select: { id: true, name: true } },
     },
   })
 
@@ -28,9 +29,9 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json()
-  const { title, description, subjectId } = body
+  const { title, description, subjectId, employeeId } = body
 
-  if (!title?.trim() || !description?.trim() || !subjectId) {
+  if (!title?.trim() || !description?.trim() || !subjectId || !employeeId) {
     return NextResponse.json({ error: 'Preencha todos os campos.' }, { status: 400 })
   }
 
@@ -40,16 +41,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Selecione um assunto válido.' }, { status: 400 })
   }
 
+  const employee = await prisma.employee.findUnique({ where: { id: employeeId } })
+
+  if (!employee || !employee.active) {
+    return NextResponse.json({ error: 'Selecione um funcionário válido.' }, { status: 400 })
+  }
+
   const ticket = await prisma.ticket.create({
     data: {
       title,
       description,
       subjectId,
+      employeeId,
       createdById: session.user.id,
     },
     include: {
       createdBy: { select: { id: true, name: true } },
       subject: { select: { id: true, name: true } },
+      employee: { select: { id: true, name: true } },
     },
   })
 

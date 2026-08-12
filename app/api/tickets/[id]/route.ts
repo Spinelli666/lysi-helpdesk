@@ -19,6 +19,7 @@ export async function GET(
     include: {
       createdBy: { select: { id: true, name: true, email: true } },
       subject: { select: { id: true, name: true } },
+      employee: { select: { id: true, name: true } },
       comments: {
         orderBy: { createdAt: 'asc' },
         include: COMMENT_INCLUDE,

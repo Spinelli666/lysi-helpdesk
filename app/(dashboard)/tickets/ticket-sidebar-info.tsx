@@ -1,10 +1,12 @@
 export function TicketSidebarInfo({
   createdBy,
   subject,
+  employee,
   createdAt,
 }: {
   createdBy: { name: string; email: string }
   subject: { name: string }
+  employee: { name: string } | null
   createdAt: string
 }) {
   return (
@@ -29,6 +31,10 @@ export function TicketSidebarInfo({
           <div>
             <p className="text-xs text-gray-400 uppercase tracking-wide">Assunto</p>
             <p className="text-gray-800 mt-0.5">{subject.name}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400 uppercase tracking-wide">Funcionário atendido</p>
+            <p className="text-gray-800 mt-0.5">{employee?.name ?? '—'}</p>
           </div>
           <div>
             <p className="text-xs text-gray-400 uppercase tracking-wide">Criado em</p>

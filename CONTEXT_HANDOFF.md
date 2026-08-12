@@ -27,7 +27,7 @@ Nome/marca: **Lýsi** (Λύση = "solução" em grego). Tagline: "Support, solv
 - `Category` virou `Subject` ("Assunto") — sem a flag `manualOnly` que existia no helpdesk-ige, porque aqui **todo** chamado é manual.
 - Comentários/anexos em cada chamado foram mantidos (para o Suporte anotar o que fez e anexar prints como "prova"), mas sem thread de resposta, sem reações, sem marcação de nota interna/pública (não existe essa distinção aqui).
 - Dashboard mantido, adaptado: sem card de "tempo médio de resolução" (não faz sentido sem workflow), com KPIs de total de chamados, chamados hoje, assunto mais comum, atendente mais ativo, gráficos por mês/dia, por assunto, por atendente.
-- Tela de Usuários simplificada: só login básico (nome, e-mail, senha, cargo Admin/Suporte) — sem os campos extras que o helpdesk-ige tinha (posição, departamento, telefone, data de nascimento etc.).
+- Tela de Usuários simplificada: hoje só tem login básico (nome, e-mail, senha, cargo Admin/Suporte) — **ver tarefa pendente abaixo, isso está prestes a mudar**.
 
 ## Modelos Prisma atuais
 
@@ -52,24 +52,39 @@ Nome/marca: **Lýsi** (Λύση = "solução" em grego). Tagline: "Support, solv
 8. ✅ Sidebar/nav ajustada para as 2 roles: Chamados, Dashboard (todos) + Administrador → Usuários, Assuntos (admin only).
 9. ✅ Migração/seed rodados, `npx tsc --noEmit` sem erros, smoke test manual completo passou (login → criar chamado → adicionar nota → ver detalhe → deletar chamado), incluindo checagem de todas as rotas principais (200 OK).
 
-## O que falta (próximos passos combinados, nessa ordem)
+## TAREFA PENDENTE — próxima coisa a fazer neste chat
 
-1. **Branding/identidade visual Lýsi** (PRÓXIMO PASSO, ainda não iniciado). Especificação completa:
-   - Cor primária: Indigo `#4F46E5` (o app hoje ainda está com o esquema visual antigo do helpdesk-ige — verde `#008A83` / vermelho `#d53320` — como placeholder temporário, precisa trocar).
-   - Paleta de cores de status definida no briefing original (pedir para o usuário reenviar se não estiver disponível no histórico).
-   - Tipografia: Inter/Manrope.
-   - Logo/símbolo: um "Λ" (lambda) estilizado combinando check + bolha de chat — precisa virar favicon e wordmark da sidebar (hoje só tem texto "Lýsi" como placeholder em `app/layout.tsx`, `app/(auth)/layout.tsx`, tela de login e `dashboard-shell.tsx`).
-   - Tagline: "Support, solved."
-   - Ajustes de espaçamento/raio/componentes conforme o spec detalhado que o usuário forneceu (buscar no histórico da conversa anterior se necessário, pois o documento completo de branding foi colado em uma mensagem anterior).
-   - **Isso foi propositalmente deixado por último**, para validar a funcionalidade primeiro sem mexer em cor/fonte no meio da reestruturação do schema.
-2. **Criar repositório no GitHub e push**: repo `https://github.com/Spinelli666/lysi-helpdesk.git` (o usuário disse que criaria o repo manualmente pelo GitHub antes). Ainda não foi feito `git init`/commit/push neste projeto.
-3. **Hospedagem/deploy**: usuário pediu "mesmo tipo de setup" que o helpdesk-ige usa em produção — ainda não detalhado/confirmado, verificar como o helpdesk-ige está hospedado antes de replicar.
-4. (Fase futura, não agora) Fluxos estruturados de Criação de Usuário / Desligamento de Usuário — o usuário decidiu adiar isso explicitamente.
+Adicionar ao formulário de "Novo usuário" (`app/(dashboard)/admin/users/page.tsx`) os campos abaixo, **todos opcionais** (nenhum obrigatório para salvar):
 
-## Pendência secundária do outro projeto (helpdesk-ige, não deste)
+- **Projeto** — dropdown
+- **Unidade** — depende do Projeto escolhido (dropdown/multi-seleção, filtrado pela lista de unidades daquele projeto)
+- **Departamento** — campo de texto livre
+- **Cargo** — dropdown com lista de cargos pré-definida
 
-Existe uma lista de ~9 cargos ambíguos/agrupados (ex: "MÉDICO (e variações)", "MOTORISTA (e variações)") que ficou pendente de expansão na lista de CARGOS do helpdesk-ige — só relevante se o usuário voltar a falar sobre isso, não é deste projeto.
+Diferente do helpdesk-ige (onde Projeto/Unidade são obrigatórios quando a empresa não é HTS, e Cargo tem lógica condicional por empresa), **aqui em Lýsi não existe conceito de Empresa** — então os 4 campos (Projeto, Unidade, Departamento, Cargo) devem aparecer sempre, mas todos como **opcionais**, sem nenhuma validação bloqueando o salvamento se ficarem em branco.
+
+### Origem dos dados (copiar do helpdesk-ige)
+
+As listas de opções (Projetos, Unidades por projeto, Cargos) já existem prontas no projeto `helpdesk-ige`, no arquivo:
+`c:\Users\HTS\Downloads\helpdesk-ige\app\(dashboard)\tickets\user-creation-constants.ts`
+
+Lá tem as constantes `PROJECTS` (17 projetos), `UNITS_BY_PROJECT` (mapa projeto → lista de unidades, ~250+ unidades no total) e `CARGOS` (~299 cargos). A ideia é **reaproveitar essas mesmas listas** aqui em Lýsi (copiar os dados, não precisa reinventar), só que sem a lógica de "Empresa HTS vs IGEDES" que existe lá — aqui é sempre a mesma organização (IGEDES), então os campos Projeto/Unidade/Cargo ficam disponíveis direto, sem depender de uma Empresa selecionada primeiro.
+
+### O que precisa mudar
+
+1. **Schema Prisma** (`prisma/schema.prisma`): adicionar ao model `User` os campos opcionais `project String?`, `unit String[]` (ou `String?` se for single-select — decidir), `department String?`, `position String?`. Gerar migração.
+2. **Constantes**: criar um arquivo equivalente a `user-creation-constants.ts` em Lýsi (ex: `app/lib/user-fields-constants.ts`) com `PROJECTS`, `UNITS_BY_PROJECT`, `CARGOS` copiados do helpdesk-ige.
+3. **API** (`app/api/users/route.ts` e `app/api/users/[id]/route.ts`): aceitar os novos campos no POST/PATCH, sem exigir nenhum deles.
+4. **UI** (`app/(dashboard)/admin/users/page.tsx`): adicionar os 4 campos no formulário de criar/editar usuário, seguindo o mesmo padrão visual de seletor usado no helpdesk-ige (picker com busca para Projeto/Unidade/Cargo), mas sem nenhuma validação obrigatória.
+5. Verificar se esses campos precisam aparecer em algum outro lugar (ex: tabela de listagem de usuários, tela de perfil) — decidir com o usuário se for ambíguo.
+
+## Depois dessa tarefa — próximos passos (ordem combinada)
+
+1. Branding/identidade visual Lýsi (Indigo `#4F46E5`, tipografia Inter/Manrope, logo Λ, tagline "Support, solved.") — app hoje ainda está com esquema visual placeholder (verde/vermelho do helpdesk-ige). Buscar o spec completo de branding no histórico da conversa anterior se necessário.
+2. Criar repositório no GitHub (`https://github.com/Spinelli666/lysi-helpdesk.git`) e fazer o push — ainda não foi feito `git init`/commit/push neste projeto.
+3. Hospedagem/deploy — usuário pediu "mesmo tipo de setup" que o helpdesk-ige usa em produção, ainda não detalhado.
+4. (Fase futura, não agora) Fluxos estruturados de Criação de Usuário / Desligamento de Usuário — adiado explicitamente pelo usuário.
 
 ---
 
-**Instrução para o novo chat**: continue a partir daqui. O próximo passo natural é perguntar ao usuário se ele quer seguir agora para o rebrand (passo 1 acima) ou revisar o app funcional primeiro.
+**Instrução para o novo chat**: comece pela TAREFA PENDENTE acima (adicionar os 4 campos opcionais ao formulário de usuário). Depois de concluir e validar, pergunte ao usuário se quer seguir para o próximo passo (branding).

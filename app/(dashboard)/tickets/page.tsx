@@ -15,6 +15,7 @@ type Ticket = {
   title: string
   createdAt: string
   subject: { id: string; name: string }
+  employee: { id: string; name: string } | null
   createdBy: { id: string; name: string }
 }
 
@@ -36,7 +37,7 @@ export default function TicketsPage() {
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Chamados</h1>
+        <h1 className="text-2xl font-heading font-bold">Chamados</h1>
         <NewTicketDialog onCreated={fetchTickets} />
       </div>
 
@@ -56,6 +57,7 @@ export default function TicketsPage() {
                 <th className="text-center px-4 py-3">ID</th>
                 <th className="text-center px-4 py-3">Título</th>
                 <th className="text-center px-4 py-3">Assunto</th>
+                <th className="text-center px-4 py-3">Funcionário</th>
                 <th className="text-center px-4 py-3">Registrado por</th>
                 <th className="text-center px-4 py-3">Data</th>
                 <th className="text-center px-4 py-3">Visualizar</th>
@@ -73,6 +75,7 @@ export default function TicketsPage() {
                   </td>
                   <td className="px-4 py-3 text-center font-medium">{ticket.title}</td>
                   <td className="px-4 py-3 text-center text-gray-500">{ticket.subject.name}</td>
+                  <td className="px-4 py-3 text-center text-gray-500">{ticket.employee?.name ?? '—'}</td>
                   <td className="px-4 py-3 text-center text-gray-500">{ticket.createdBy.name}</td>
                   <td className="px-4 py-3 text-center text-gray-400 text-xs">
                     {new Date(ticket.createdAt).toLocaleDateString('pt-BR')}
@@ -107,7 +110,7 @@ export default function TicketsPage() {
         open={viewingTicketId !== null}
         onOpenChange={(open) => !open && setViewingTicketId(null)}
       >
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden border-3 border-[rgb(213,51,32)] flex flex-col">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>
               Detalhes do Chamado

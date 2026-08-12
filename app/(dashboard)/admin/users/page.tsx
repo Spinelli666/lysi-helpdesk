@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { isValidEmail, isAllowedEmailDomain, ALLOWED_EMAIL_DOMAIN } from '@/app/lib/validate-email'
 
 type User = {
   id: string
@@ -71,6 +72,11 @@ export default function UsersPage() {
       return
     }
 
+    if (!isValidEmail(form.email) || !isAllowedEmailDomain(form.email)) {
+      setError(`O email deve ser um endereço válido do domínio @${ALLOWED_EMAIL_DOMAIN}`)
+      return
+    }
+
     setSaving(true)
     setError('')
 
@@ -123,7 +129,7 @@ export default function UsersPage() {
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Usuários</h1>
+        <h1 className="text-2xl font-heading font-bold">Usuários</h1>
         <Button onClick={openNew}>+ Novo usuário</Button>
       </div>
 
@@ -141,14 +147,14 @@ export default function UsersPage() {
         <p className="text-gray-500">Carregando...</p>
       ) : (
         <div>
-          <table className="w-full text-sm border-separate border-spacing-0 border-4 border-[#d53320] rounded-lg overflow-hidden">
-            <thead className="bg-[#d53320] text-white uppercase">
-              <tr className="bg-[#d53320]">
-                <th className="text-center px-4 py-3 bg-[#d53320]">Nome</th>
-                <th className="text-center px-4 py-3 bg-[#d53320]">Email</th>
-                <th className="text-center px-4 py-3 bg-[#d53320]">Cargo</th>
-                <th className="text-center px-4 py-3 bg-[#d53320]">Status</th>
-                <th className="text-center px-4 py-3 bg-[#d53320]"></th>
+          <table className="w-full text-sm border-separate border-spacing-0 border border-border rounded-lg overflow-hidden">
+            <thead className="bg-primary text-primary-foreground uppercase">
+              <tr>
+                <th className="text-center px-4 py-3">Nome</th>
+                <th className="text-center px-4 py-3">Email</th>
+                <th className="text-center px-4 py-3">Cargo</th>
+                <th className="text-center px-4 py-3">Status</th>
+                <th className="text-center px-4 py-3"></th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -165,7 +171,7 @@ export default function UsersPage() {
                   <td className="px-4 py-3 text-center text-gray-500">{user.email}</td>
                   <td className="px-4 py-3 text-center text-gray-500">{ROLE_LABELS[user.role] ?? user.role}</td>
                   <td className="px-4 py-3 text-center">
-                    <Badge variant={user.active ? 'default' : 'secondary'}>
+                    <Badge variant={user.active ? 'success' : 'secondary'}>
                       {user.active ? 'Ativo' : 'Inativo'}
                     </Badge>
                   </td>
@@ -205,7 +211,7 @@ export default function UsersPage() {
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-lg border-3 border-[rgb(213,51,32)]">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{editingUser ? 'Editar usuário' : 'Novo usuário'}</DialogTitle>
           </DialogHeader>
@@ -224,6 +230,7 @@ export default function UsersPage() {
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
+                placeholder={`nome@${ALLOWED_EMAIL_DOMAIN}`}
               />
             </div>
 

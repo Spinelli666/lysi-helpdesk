@@ -15,6 +15,7 @@ type Ticket = {
   description: string
   createdAt: string
   subject: { id: string; name: string }
+  employee: { id: string; name: string } | null
   createdBy: { id: string; name: string; email: string }
   comments: Comment[]
   attachments: { id: string; filename: string; size: number }[]
@@ -109,6 +110,7 @@ export function TicketDetailView({
             <TicketSidebarInfo
               createdBy={ticket.createdBy}
               subject={ticket.subject}
+              employee={ticket.employee}
               createdAt={ticket.createdAt}
             />
           )}
@@ -125,6 +127,7 @@ export function TicketDetailView({
             <TicketSidebarInfo
               createdBy={ticket.createdBy}
               subject={ticket.subject}
+              employee={ticket.employee}
               createdAt={ticket.createdAt}
             />
           </div>

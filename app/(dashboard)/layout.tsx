@@ -17,7 +17,6 @@ export default async function DashboardLayout({
 
   return (
     <DashboardShell
-      role={session.user.role}
       userName={session.user.name ?? ''}
       userRole={session.user.role}
     >

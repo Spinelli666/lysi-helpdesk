@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Label } from '@/components/ui/label'
 import { NewTicketDialog } from '../tickets/new-ticket-dialog'
 
-const BRAND = '#d53320'
+const BRAND = '#4F46E5'
 
 type Ticket = {
   id: string
@@ -195,6 +195,7 @@ export default function DashboardPage() {
 
   const topSubject = subjectData[0]?.label ?? '—'
   const topAgent = agentData[0]?.label ?? '—'
+  const topUsers = agentData.slice(0, 5)
 
   const effectiveFromMonth = useMemo(() => {
     const keys = filteredTickets.map((t) => monthKey(new Date(t.createdAt)))
@@ -245,7 +246,7 @@ export default function DashboardPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <h1 className="text-2xl font-heading font-bold">Dashboard</h1>
         <NewTicketDialog onCreated={fetchData} />
       </div>
 
@@ -259,7 +260,7 @@ export default function DashboardPage() {
               onClick={() => applyPreset(p)}
               className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                 activePreset === p.key
-                  ? 'bg-[#d53320] text-white border-[#d53320]'
+                  ? 'bg-primary text-primary-foreground border-primary'
                   : 'border-gray-300 text-gray-600 hover:bg-gray-50'
               }`}
             >
@@ -289,7 +290,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="border-4 border-[#d53320] rounded-lg p-4">
+        <div className="border-2 border-primary rounded-lg p-4">
           <p className="text-xs text-gray-400 uppercase tracking-wide">Total de chamados</p>
           <p className="text-3xl font-bold mt-1">{total}</p>
         </div>
@@ -318,7 +319,7 @@ export default function DashboardPage() {
               onClick={() => setGranularity('month')}
               className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                 granularity === 'month'
-                  ? 'bg-[#d53320] text-white border-[#d53320]'
+                  ? 'bg-primary text-primary-foreground border-primary'
                   : 'border-gray-300 text-gray-600 hover:bg-gray-50'
               }`}
             >
@@ -329,7 +330,7 @@ export default function DashboardPage() {
               onClick={() => setGranularity('day')}
               className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                 granularity === 'day'
-                  ? 'bg-[#d53320] text-white border-[#d53320]'
+                  ? 'bg-primary text-primary-foreground border-primary'
                   : 'border-gray-300 text-gray-600 hover:bg-gray-50'
               }`}
             >
@@ -358,6 +359,32 @@ export default function DashboardPage() {
             <HorizontalBars data={agentData} />
           )}
         </div>
+      </div>
+
+      <div className="border rounded-lg p-4">
+        <p className="text-sm font-semibold text-gray-700 mb-3">Top 5 usuários com mais chamados</p>
+        {topUsers.length === 0 ? (
+          <p className="text-sm text-gray-500">Nenhum chamado no período.</p>
+        ) : (
+          <table className="w-full text-sm border-separate border-spacing-0 border border-border rounded-lg overflow-hidden">
+            <thead className="bg-primary text-primary-foreground uppercase">
+              <tr>
+                <th className="text-center px-4 py-2 w-16">#</th>
+                <th className="text-center px-4 py-2">Usuário</th>
+                <th className="text-center px-4 py-2 w-32">Chamados</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {topUsers.map((user, i) => (
+                <tr key={user.label} className="hover:bg-gray-50">
+                  <td className="px-4 py-2 text-center text-gray-400 font-mono">{i + 1}</td>
+                  <td className="px-4 py-2 text-center font-medium">{user.label}</td>
+                  <td className="px-4 py-2 text-center text-gray-500">{user.count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <div className="border rounded-lg p-4">

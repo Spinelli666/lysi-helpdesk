@@ -27,6 +27,18 @@ model Subject {
   tickets   Ticket[]
 }
 
+model Employee {
+  id         String   @id @default(cuid())
+  name       String
+  active     Boolean  @default(true)
+  project    String?
+  unit       String[] @default([])
+  department String?
+  position   String?
+  createdAt  DateTime @default(now())
+  tickets    Ticket[]
+}
+
 model Ticket {
   id          String       @id @default(cuid())
   number      Int          @unique @default(autoincrement())
@@ -35,11 +47,13 @@ model Ticket {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   subjectId   String
+  employeeId  String?
   createdById String
   attachments Attachment[]
   comments    Comment[]
   createdBy   User         @relation(fields: [createdById], references: [id])
   subject     Subject      @relation(fields: [subjectId], references: [id])
+  employee    Employee?    @relation(fields: [employeeId], references: [id])
 }
 
 model Comment {

@@ -7,6 +7,7 @@ import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { LysiWordmark } from '@/components/logo'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -39,8 +40,10 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-col items-center">
-      <h1 className="mb-20 text-5xl font-bold" style={{ color: '#D53320' }}>Lýsi</h1>
-      <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8 border-3" style={{ borderColor: '#D53320' }}>
+      <div className="mb-14 text-white">
+        <LysiWordmark href={null} markClassName="h-12 w-12" textClassName="text-4xl text-white" tagline />
+      </div>
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
         <div className="mb-8 text-center">
           <p className="text-gray-500 mt-1 text-lg">Faça login para continuar</p>
         </div>
