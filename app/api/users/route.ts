@@ -1,0 +1,55 @@
+import { auth } from '@/app/lib/auth'
+import { prisma } from '@/app/lib/prisma'
+import { NextResponse } from 'next/server'
+import bcrypt from 'bcryptjs'
+
+export async function GET() {
+  const session = await auth()
+
+  if (!session || session.user.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
+  const users = await prisma.user.findMany({
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      active: true,
+      createdAt: true,
+    },
+  })
+
+  return NextResponse.json(users)
+}
+
+export async function POST(req: Request) {
+  const session = await auth()
+
+  if (!session || session.user.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  }
+
+  const body = await req.json()
+  const { name, email, password, role } = body
+
+  if (!name?.trim() || !email?.trim() || !password || !role) {
+    return NextResponse.json({ error: 'Campos obrigatórios faltando' }, { status: 400 })
+  }
+
+  const exists = await prisma.user.findUnique({ where: { email } })
+  if (exists) {
+    return NextResponse.json({ error: 'Email já cadastrado' }, { status: 400 })
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10)
+
+  const user = await prisma.user.create({
+    data: { name, email, password: hashedPassword, role },
+    select: { id: true, name: true, email: true, role: true, active: true },
+  })
+
+  return NextResponse.json(user, { status: 201 })
+}
