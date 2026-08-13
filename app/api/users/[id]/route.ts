@@ -1,5 +1,6 @@
 import { auth } from '@/app/lib/auth'
 import { prisma } from '@/app/lib/prisma'
+import { createLog, diffFields } from '@/app/lib/audit-log'
 import { NextResponse } from 'next/server'
 import { isValidEmail, isAllowedEmailDomain, ALLOWED_EMAIL_DOMAIN } from '@/app/lib/validate-email'
 import bcrypt from 'bcryptjs'
@@ -32,6 +33,11 @@ export async function PATCH(
     }
   }
 
+  const existing = await prisma.user.findUnique({ where: { id } })
+  if (!existing) {
+    return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
+  }
+
   const user = await prisma.user.update({
     where: { id },
     data: {
@@ -42,6 +48,22 @@ export async function PATCH(
     },
     select: { id: true, name: true, email: true, role: true, active: true },
   })
+
+  const changes = diffFields(existing, { name, email, role }, ['name', 'email', 'role'])
+  if (password) {
+    changes.password = { before: '••••••', after: '••••••' }
+  }
+
+  if (Object.keys(changes).length > 0) {
+    await createLog({
+      session,
+      action: 'UPDATE',
+      entityType: 'USER',
+      entityId: user.id,
+      entityLabel: `Usuário ${user.name} (${user.email})`,
+      changes,
+    })
+  }
 
   return NextResponse.json(user)
 }
@@ -74,6 +96,14 @@ export async function DELETE(
       { status: 400 }
     )
   }
+
+  await createLog({
+    session,
+    action: 'DELETE',
+    entityType: 'USER',
+    entityId: user.id,
+    entityLabel: `Usuário ${user.name} (${user.email})`,
+  })
 
   return NextResponse.json({ success: true })
 }

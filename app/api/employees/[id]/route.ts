@@ -1,5 +1,6 @@
 import { auth } from '@/app/lib/auth'
 import { prisma } from '@/app/lib/prisma'
+import { createLog, diffFields } from '@/app/lib/audit-log'
 import { NextResponse } from 'next/server'
 
 export async function PATCH(
@@ -20,6 +21,11 @@ export async function PATCH(
     return NextResponse.json({ error: 'Nome é obrigatório' }, { status: 400 })
   }
 
+  const existing = await prisma.employee.findUnique({ where: { id } })
+  if (!existing) {
+    return NextResponse.json({ error: 'Funcionário não encontrado' }, { status: 404 })
+  }
+
   const employee = await prisma.employee.update({
     where: { id },
     data: {
@@ -31,6 +37,26 @@ export async function PATCH(
       ...(position !== undefined ? { position: position || null } : {}),
     },
   })
+
+  const changes = diffFields(existing, {
+    name: name !== undefined ? name.trim() : undefined,
+    active,
+    project: project !== undefined ? project || null : undefined,
+    unit: unit !== undefined ? (Array.isArray(unit) ? unit : []) : undefined,
+    department: department !== undefined ? department || null : undefined,
+    position: position !== undefined ? position || null : undefined,
+  }, ['name', 'active', 'project', 'unit', 'department', 'position'])
+
+  if (Object.keys(changes).length > 0) {
+    await createLog({
+      session,
+      action: Object.keys(changes).length === 1 && 'active' in changes ? 'TOGGLE' : 'UPDATE',
+      entityType: 'EMPLOYEE',
+      entityId: employee.id,
+      entityLabel: `Funcionário ${employee.name}`,
+      changes,
+    })
+  }
 
   return NextResponse.json(employee)
 }
@@ -59,6 +85,14 @@ export async function DELETE(
       { status: 400 }
     )
   }
+
+  await createLog({
+    session,
+    action: 'DELETE',
+    entityType: 'EMPLOYEE',
+    entityId: employee.id,
+    entityLabel: `Funcionário ${employee.name}`,
+  })
 
   return NextResponse.json({ success: true })
 }

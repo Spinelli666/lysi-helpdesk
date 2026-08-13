@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
 import { ArrowLeft as ArrowLeftIcon, Trash2 as Trash2Icon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -34,7 +33,6 @@ export function TicketDetailView({
   onChanged?: () => void | Promise<void>
   showSidebar?: boolean
 }) {
-  const { data: session } = useSession()
   const [ticket, setTicket] = useState<Ticket | null>(null)
   const [loading, setLoading] = useState(true)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -66,8 +64,6 @@ export function TicketDetailView({
     return <div className="text-gray-500">Carregando...</div>
   }
 
-  const isAdmin = session?.user?.role === 'ADMIN'
-
   return (
     <div>
       {onBack && (
@@ -86,17 +82,15 @@ export function TicketDetailView({
           <p className="text-xs text-gray-400 font-mono">#{String(ticket.number).padStart(6, '0')}</p>
           <h1 className="text-xl font-bold text-gray-900 mt-0.5">{ticket.title}</h1>
         </div>
-        {isAdmin && (
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            onClick={() => setDeleteDialogOpen(true)}
-          >
-            <Trash2Icon size={16} />
-            Excluir
-          </Button>
-        )}
+        <Button
+          type="button"
+          variant="destructive"
+          size="sm"
+          onClick={() => setDeleteDialogOpen(true)}
+        >
+          <Trash2Icon size={16} />
+          Excluir
+        </Button>
       </div>
 
       <div className={showSidebar ? 'grid grid-cols-1 lg:grid-cols-3 gap-6' : 'space-y-6'}>

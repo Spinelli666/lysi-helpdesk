@@ -13,6 +13,7 @@ type Ticket = {
   createdAt: string
   subject: { id: string; name: string }
   createdBy: { id: string; name: string }
+  employee: { id: string; name: string } | null
 }
 
 function monthKey(date: Date) {
@@ -197,6 +198,18 @@ export default function DashboardPage() {
   const topAgent = agentData[0]?.label ?? '—'
   const topUsers = agentData.slice(0, 5)
 
+  const topEmployeesData = useMemo(() => {
+    const counts = countBy(
+      filteredTickets
+        .filter((t): t is Ticket & { employee: { id: string; name: string } } => t.employee !== null)
+        .map((t) => t.employee.name)
+    )
+    return Object.entries(counts)
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
+  }, [filteredTickets])
+
   const effectiveFromMonth = useMemo(() => {
     const keys = filteredTickets.map((t) => monthKey(new Date(t.createdAt)))
     return fromMonth || keys.reduce((min, k) => (k < min ? k : min), CURRENT_MONTH)
@@ -380,6 +393,32 @@ export default function DashboardPage() {
                   <td className="px-4 py-2 text-center text-gray-400 font-mono">{i + 1}</td>
                   <td className="px-4 py-2 text-center font-medium">{user.label}</td>
                   <td className="px-4 py-2 text-center text-gray-500">{user.count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <div className="border rounded-lg p-4">
+        <p className="text-sm font-semibold text-gray-700 mb-3">Top 10 funcionários com mais chamados</p>
+        {topEmployeesData.length === 0 ? (
+          <p className="text-sm text-gray-500">Nenhum chamado no período.</p>
+        ) : (
+          <table className="w-full text-sm border-separate border-spacing-0 border border-border rounded-lg overflow-hidden">
+            <thead className="bg-primary text-primary-foreground uppercase">
+              <tr>
+                <th className="text-center px-4 py-2 w-16">#</th>
+                <th className="text-center px-4 py-2">Funcionário</th>
+                <th className="text-center px-4 py-2 w-32">Chamados</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {topEmployeesData.map((employee, i) => (
+                <tr key={employee.label} className="hover:bg-gray-50">
+                  <td className="px-4 py-2 text-center text-gray-400 font-mono">{i + 1}</td>
+                  <td className="px-4 py-2 text-center font-medium">{employee.label}</td>
+                  <td className="px-4 py-2 text-center text-gray-500">{employee.count}</td>
                 </tr>
               ))}
             </tbody>

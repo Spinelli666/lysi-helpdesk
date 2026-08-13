@@ -1,14 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Search } from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { PROJECTS, UNITS_BY_PROJECT, CARGOS } from '@/app/lib/user-fields-constants'
-import { NewEmployeeDialog } from './new-employee-dialog'
 
 type Employee = {
   id: string
@@ -20,21 +17,21 @@ type Employee = {
   position: string | null
 }
 
-export default function EmployeesPage() {
-  const [employees, setEmployees] = useState<Employee[]>([])
-  const [loading, setLoading] = useState(true)
+export function NewEmployeeDialog({
+  onCreated,
+  triggerLabel = '+ Novo funcionário',
+  triggerVariant = 'default',
+}: {
+  onCreated: (employee: Employee) => void | Promise<void>
+  triggerLabel?: string
+  triggerVariant?: 'default' | 'outline'
+}) {
   const [open, setOpen] = useState(false)
-  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
   const [form, setForm] = useState({
     name: '', project: '', unit: [] as string[], department: '', position: '',
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [search, setSearch] = useState('')
-
-  const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(null)
-  const [deleting, setDeleting] = useState(false)
-  const [deleteError, setDeleteError] = useState('')
 
   const [projectPickerOpen, setProjectPickerOpen] = useState(false)
   const [projectPickerSearch, setProjectPickerSearch] = useState('')
@@ -46,30 +43,8 @@ export default function EmployeesPage() {
   const [cargoPickerOpen, setCargoPickerOpen] = useState(false)
   const [cargoPickerSearch, setCargoPickerSearch] = useState('')
 
-  const filteredEmployees = employees.filter((employee) => {
-    const term = search.trim().toLowerCase()
-    if (!term) return true
-    return employee.name.toLowerCase().includes(term)
-  })
-
-  async function fetchEmployees() {
-    const res = await fetch('/api/employees')
-    const data = await res.json()
-    setEmployees(data)
-    setLoading(false)
-  }
-
-  useEffect(() => { fetchEmployees() }, [])
-
-  function openEdit(employee: Employee) {
-    setEditingEmployee(employee)
-    setForm({
-      name: employee.name,
-      project: employee.project ?? '',
-      unit: employee.unit ?? [],
-      department: employee.department ?? '',
-      position: employee.position ?? '',
-    })
+  function openDialog() {
+    setForm({ name: '', project: '', unit: [], department: '', position: '' })
     setError('')
     setOpen(true)
   }
@@ -122,13 +97,11 @@ export default function EmployeesPage() {
       return
     }
 
-    if (!editingEmployee) return
-
     setSaving(true)
     setError('')
 
-    const res = await fetch(`/api/employees/${editingEmployee.id}`, {
-      method: 'PATCH',
+    const res = await fetch('/api/employees', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
     })
@@ -140,120 +113,22 @@ export default function EmployeesPage() {
       return
     }
 
-    await fetchEmployees()
-    setOpen(false)
+    const employee = await res.json()
+    await onCreated(employee)
     setSaving(false)
-  }
-
-  async function handleToggle(id: string) {
-    await fetch(`/api/employees/${id}/toggle`, { method: 'PATCH' })
-    await fetchEmployees()
-  }
-
-  async function handleDelete() {
-    if (!deletingEmployee) return
-
-    setDeleting(true)
-    setDeleteError('')
-
-    const res = await fetch(`/api/employees/${deletingEmployee.id}`, { method: 'DELETE' })
-
-    if (!res.ok) {
-      const data = await res.json()
-      setDeleteError(data.error ?? 'Erro ao excluir.')
-      setDeleting(false)
-      return
-    }
-
-    await fetchEmployees()
-    setDeleting(false)
-    setDeletingEmployee(null)
+    setOpen(false)
   }
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-heading font-bold">Funcionários</h1>
-        <NewEmployeeDialog onCreated={() => fetchEmployees()} />
-      </div>
-
-      <div className="relative mb-4 max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-        <Input
-          placeholder="Pesquisar por nome..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
-      </div>
-
-      {loading ? (
-        <p className="text-gray-500">Carregando...</p>
-      ) : (
-        <div>
-          <table className="w-full text-sm border-separate border-spacing-0 border border-border rounded-lg overflow-hidden">
-            <thead className="bg-primary text-primary-foreground uppercase">
-              <tr>
-                <th className="text-center px-4 py-3">Nome</th>
-                <th className="text-center px-4 py-3">Status</th>
-                <th className="text-center px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {filteredEmployees.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="px-4 py-6 text-center text-gray-500">
-                    Nenhum funcionário encontrado.
-                  </td>
-                </tr>
-              ) : (
-              filteredEmployees.map((employee) => (
-                <tr key={employee.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-center font-medium">{employee.name}</td>
-                  <td className="px-4 py-3 text-center">
-                    <Badge variant={employee.active ? 'success' : 'secondary'}>
-                      {employee.active ? 'Ativo' : 'Inativo'}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2 justify-center">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        title="Editar"
-                        onClick={() => openEdit(employee)}
-                      >
-                        ✏️
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleToggle(employee.id)}
-                      >
-                        {employee.active ? 'Inativar' : 'Ativar'}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        title="Excluir"
-                        onClick={() => { setDeletingEmployee(employee); setDeleteError('') }}
-                      >
-                        🗑️
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+    <>
+      <Button type="button" variant={triggerVariant} onClick={openDialog}>
+        {triggerLabel}
+      </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Editar funcionário</DialogTitle>
+            <DialogTitle>Novo funcionário</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 mt-2">
@@ -479,27 +354,6 @@ export default function EmployeesPage() {
       </Dialog>
         </DialogContent>
       </Dialog>
-
-      <Dialog open={!!deletingEmployee} onOpenChange={(v) => !v && setDeletingEmployee(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Excluir funcionário</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Tem certeza que deseja excluir permanentemente {deletingEmployee?.name}? Essa ação não pode ser desfeita.
-            Se o funcionário tiver chamados vinculados, use &quot;Inativar&quot; em vez de excluir.
-          </p>
-          {deleteError && <p className="text-sm text-red-500">{deleteError}</p>}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeletingEmployee(null)}>
-              Cancelar
-            </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? 'Excluindo...' : 'Excluir'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+    </>
   )
 }

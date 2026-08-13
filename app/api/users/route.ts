@@ -1,5 +1,6 @@
 import { auth } from '@/app/lib/auth'
 import { prisma } from '@/app/lib/prisma'
+import { createLog } from '@/app/lib/audit-log'
 import { NextResponse } from 'next/server'
 import { isValidEmail, isAllowedEmailDomain, ALLOWED_EMAIL_DOMAIN } from '@/app/lib/validate-email'
 import bcrypt from 'bcryptjs'
@@ -57,6 +58,14 @@ export async function POST(req: Request) {
   const user = await prisma.user.create({
     data: { name, email, password: hashedPassword, role },
     select: { id: true, name: true, email: true, role: true, active: true },
+  })
+
+  await createLog({
+    session,
+    action: 'CREATE',
+    entityType: 'USER',
+    entityId: user.id,
+    entityLabel: `Usuário ${user.name} (${user.email})`,
   })
 
   return NextResponse.json(user, { status: 201 })

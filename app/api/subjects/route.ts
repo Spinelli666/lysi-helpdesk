@@ -1,5 +1,6 @@
 import { auth } from '@/app/lib/auth'
 import { prisma } from '@/app/lib/prisma'
+import { createLog } from '@/app/lib/audit-log'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
@@ -37,6 +38,14 @@ export async function POST(req: Request) {
   }
 
   const subject = await prisma.subject.create({ data: { name } })
+
+  await createLog({
+    session,
+    action: 'CREATE',
+    entityType: 'SUBJECT',
+    entityId: subject.id,
+    entityLabel: `Assunto ${subject.name}`,
+  })
 
   return NextResponse.json(subject, { status: 201 })
 }

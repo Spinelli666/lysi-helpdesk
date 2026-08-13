@@ -9,6 +9,7 @@ const links = [
   { href: '/admin/users', label: 'Usuários' },
   { href: '/employees', label: 'Funcionários' },
   { href: '/admin/subjects', label: 'Assuntos' },
+  { href: '/logs', label: 'Logs' },
 ]
 
 export function SidebarNav() {

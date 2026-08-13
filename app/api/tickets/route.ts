@@ -1,5 +1,6 @@
 import { auth } from '@/app/lib/auth'
 import { prisma } from '@/app/lib/prisma'
+import { createLog } from '@/app/lib/audit-log'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
@@ -60,6 +61,14 @@ export async function POST(req: Request) {
       subject: { select: { id: true, name: true } },
       employee: { select: { id: true, name: true } },
     },
+  })
+
+  await createLog({
+    session,
+    action: 'CREATE',
+    entityType: 'TICKET',
+    entityId: ticket.id,
+    entityLabel: `Chamado #${String(ticket.number).padStart(6, '0')} - ${ticket.title}`,
   })
 
   return NextResponse.json(ticket, { status: 201 })

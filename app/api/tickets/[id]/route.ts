@@ -1,6 +1,7 @@
 import { auth } from '@/app/lib/auth'
 import { prisma } from '@/app/lib/prisma'
 import { COMMENT_INCLUDE } from '@/app/lib/comment-include'
+import { createLog } from '@/app/lib/audit-log'
 import { NextResponse } from 'next/server'
 
 export async function GET(
@@ -42,7 +43,7 @@ export async function DELETE(
   const { id } = await params
   const session = await auth()
 
-  if (!session || session.user.role !== 'ADMIN') {
+  if (!session) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
@@ -52,6 +53,14 @@ export async function DELETE(
   }
 
   await prisma.ticket.delete({ where: { id } })
+
+  await createLog({
+    session,
+    action: 'DELETE',
+    entityType: 'TICKET',
+    entityId: ticket.id,
+    entityLabel: `Chamado #${String(ticket.number).padStart(6, '0')} - ${ticket.title}`,
+  })
 
   return NextResponse.json({ success: true })
 }

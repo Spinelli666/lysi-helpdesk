@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { NewEmployeeDialog } from '../employees/new-employee-dialog'
 
 type Subject = { id: string; name: string; active: boolean }
 type Employee = { id: string; name: string; active: boolean }
@@ -22,14 +23,18 @@ export function NewTicketDialog({ onCreated }: { onCreated: () => void | Promise
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  async function fetchEmployees() {
+    const res = await fetch('/api/employees')
+    const data: Employee[] = await res.json()
+    setEmployees(data.filter((e) => e.active))
+  }
+
   useEffect(() => {
     if (!open) return
     fetch('/api/subjects')
       .then((res) => res.json())
       .then(setSubjects)
-    fetch('/api/employees')
-      .then((res) => res.json())
-      .then((data: Employee[]) => setEmployees(data.filter((e) => e.active)))
+    fetchEmployees()
   }, [open])
 
   function openDialog() {
@@ -125,13 +130,23 @@ export function NewTicketDialog({ onCreated }: { onCreated: () => void | Promise
             {error && <p className="text-sm text-red-500">{error}</p>}
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="button" onClick={handleSave} disabled={saving}>
-              {saving ? 'Salvando...' : 'Concluir'}
-            </Button>
+          <DialogFooter className="sm:justify-between">
+            <NewEmployeeDialog
+              triggerLabel="+ Adicionar funcionário"
+              triggerVariant="outline"
+              onCreated={async (employee) => {
+                await fetchEmployees()
+                setEmployeeId(employee.id)
+              }}
+            />
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="button" onClick={handleSave} disabled={saving}>
+                {saving ? 'Salvando...' : 'Concluir'}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

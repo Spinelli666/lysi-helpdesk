@@ -80,7 +80,36 @@ model Attachment {
   ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 }
 
+model Log {
+  id          String     @id @default(cuid())
+  action      LogAction
+  entityType  LogEntity
+  entityId    String
+  entityLabel String
+  changes     Json?
+  actorId     String
+  actorName   String
+  createdAt   DateTime   @default(now())
+
+  @@index([entityType])
+  @@index([createdAt])
+}
+
 enum Role {
   ADMIN
   SUPPORT
+}
+
+enum LogAction {
+  CREATE
+  UPDATE
+  DELETE
+  TOGGLE
+}
+
+enum LogEntity {
+  TICKET
+  EMPLOYEE
+  USER
+  SUBJECT
 }

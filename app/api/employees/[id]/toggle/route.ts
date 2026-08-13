@@ -1,5 +1,6 @@
 import { auth } from '@/app/lib/auth'
 import { prisma } from '@/app/lib/prisma'
+import { createLog } from '@/app/lib/audit-log'
 import { NextResponse } from 'next/server'
 
 export async function PATCH(
@@ -22,6 +23,15 @@ export async function PATCH(
     where: { id },
     data: { active: !employee.active },
     select: { id: true, active: true },
+  })
+
+  await createLog({
+    session,
+    action: 'TOGGLE',
+    entityType: 'EMPLOYEE',
+    entityId: employee.id,
+    entityLabel: `Funcionário ${employee.name}`,
+    changes: { active: { before: employee.active, after: updated.active } },
   })
 
   return NextResponse.json(updated)
