@@ -1,6 +1,8 @@
 import { auth } from '@/app/lib/auth'
 import { prisma } from '@/app/lib/prisma'
 import { createLog } from '@/app/lib/audit-log'
+import { parseBody } from '@/app/lib/parse-body'
+import { createEmployeeSchema } from '@/app/lib/schemas'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
@@ -24,12 +26,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const body = await req.json()
-  const { name, project, unit, department, position } = body
-
-  if (!name?.trim()) {
-    return NextResponse.json({ error: 'Nome é obrigatório' }, { status: 400 })
-  }
+  const parsed = await parseBody(req, createEmployeeSchema)
+  if (parsed.error) return parsed.error
+  const { name, project, unit, department, position } = parsed.data
 
   const employee = await prisma.employee.create({
     data: {

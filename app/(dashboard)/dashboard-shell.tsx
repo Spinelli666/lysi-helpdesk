@@ -43,7 +43,7 @@ export function DashboardShell({
               markClassName="h-7 w-7"
               textClassName="text-lg"
             />
-            <SidebarNav />
+            <SidebarNav userRole={userRole} />
           </aside>
         )}
 

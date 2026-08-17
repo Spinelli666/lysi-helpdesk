@@ -1,6 +1,7 @@
 import { auth } from '@/app/lib/auth'
 import { prisma } from '@/app/lib/prisma'
 import { createLog } from '@/app/lib/audit-log'
+import { requireAdmin } from '@/app/lib/require-admin'
 import { NextResponse } from 'next/server'
 
 export async function PATCH(
@@ -13,6 +14,9 @@ export async function PATCH(
   if (!session) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
+
+  const adminError = requireAdmin(session)
+  if (adminError) return adminError
 
   const user = await prisma.user.findUnique({ where: { id } })
   if (!user) {

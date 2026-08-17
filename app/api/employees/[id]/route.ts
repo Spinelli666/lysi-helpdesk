@@ -1,6 +1,8 @@
 import { auth } from '@/app/lib/auth'
 import { prisma } from '@/app/lib/prisma'
 import { createLog, diffFields } from '@/app/lib/audit-log'
+import { parseBody } from '@/app/lib/parse-body'
+import { updateEmployeeSchema } from '@/app/lib/schemas'
 import { NextResponse } from 'next/server'
 
 export async function PATCH(
@@ -14,12 +16,9 @@ export async function PATCH(
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const body = await req.json()
-  const { name, active, project, unit, department, position } = body
-
-  if (name !== undefined && !name.trim()) {
-    return NextResponse.json({ error: 'Nome é obrigatório' }, { status: 400 })
-  }
+  const parsed = await parseBody(req, updateEmployeeSchema)
+  if (parsed.error) return parsed.error
+  const { name, active, project, unit, department, position } = parsed.data
 
   const existing = await prisma.employee.findUnique({ where: { id } })
   if (!existing) {

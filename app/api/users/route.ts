@@ -1,8 +1,10 @@
 import { auth } from '@/app/lib/auth'
 import { prisma } from '@/app/lib/prisma'
 import { createLog } from '@/app/lib/audit-log'
+import { parseBody } from '@/app/lib/parse-body'
+import { createUserSchema } from '@/app/lib/schemas'
+import { requireAdmin } from '@/app/lib/require-admin'
 import { NextResponse } from 'next/server'
-import { isValidEmail, isAllowedEmailDomain, ALLOWED_EMAIL_DOMAIN } from '@/app/lib/validate-email'
 import bcrypt from 'bcryptjs'
 
 export async function GET() {
@@ -11,6 +13,9 @@ export async function GET() {
   if (!session) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
+
+  const adminError = requireAdmin(session)
+  if (adminError) return adminError
 
   const users = await prisma.user.findMany({
     orderBy: { createdAt: 'desc' },
@@ -34,19 +39,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const body = await req.json()
-  const { name, email, password, role } = body
+  const adminError = requireAdmin(session)
+  if (adminError) return adminError
 
-  if (!name?.trim() || !email?.trim() || !password || !role) {
-    return NextResponse.json({ error: 'Campos obrigatórios faltando' }, { status: 400 })
-  }
-
-  if (!isValidEmail(email) || !isAllowedEmailDomain(email)) {
-    return NextResponse.json(
-      { error: `O email deve ser um endereço válido do domínio @${ALLOWED_EMAIL_DOMAIN}` },
-      { status: 400 }
-    )
-  }
+  const parsed = await parseBody(req, createUserSchema)
+  if (parsed.error) return parsed.error
+  const { name, email, password, role } = parsed.data
 
   const exists = await prisma.user.findUnique({ where: { email } })
   if (exists) {

@@ -1,6 +1,8 @@
 import { auth } from '@/app/lib/auth'
 import { prisma } from '@/app/lib/prisma'
 import { createLog } from '@/app/lib/audit-log'
+import { parseBody } from '@/app/lib/parse-body'
+import { createTicketSchema } from '@/app/lib/schemas'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
@@ -29,12 +31,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const body = await req.json()
-  const { title, description, subjectId, employeeId } = body
-
-  if (!title?.trim() || !description?.trim() || !subjectId || !employeeId) {
-    return NextResponse.json({ error: 'Preencha todos os campos.' }, { status: 400 })
-  }
+  const parsed = await parseBody(req, createTicketSchema)
+  if (parsed.error) return parsed.error
+  const { title, description, subjectId, employeeId } = parsed.data
 
   const subject = await prisma.subject.findUnique({ where: { id: subjectId } })
 

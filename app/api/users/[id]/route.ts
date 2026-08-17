@@ -1,8 +1,10 @@
 import { auth } from '@/app/lib/auth'
 import { prisma } from '@/app/lib/prisma'
 import { createLog, diffFields } from '@/app/lib/audit-log'
+import { parseBody } from '@/app/lib/parse-body'
+import { updateUserSchema } from '@/app/lib/schemas'
+import { requireAdmin } from '@/app/lib/require-admin'
 import { NextResponse } from 'next/server'
-import { isValidEmail, isAllowedEmailDomain, ALLOWED_EMAIL_DOMAIN } from '@/app/lib/validate-email'
 import bcrypt from 'bcryptjs'
 
 export async function PATCH(
@@ -16,15 +18,12 @@ export async function PATCH(
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const body = await req.json()
-  const { name, email, role, password } = body
+  const adminError = requireAdmin(session)
+  if (adminError) return adminError
 
-  if (email && (!isValidEmail(email) || !isAllowedEmailDomain(email))) {
-    return NextResponse.json(
-      { error: `O email deve ser um endereço válido do domínio @${ALLOWED_EMAIL_DOMAIN}` },
-      { status: 400 }
-    )
-  }
+  const parsed = await parseBody(req, updateUserSchema)
+  if (parsed.error) return parsed.error
+  const { name, email, role, password } = parsed.data
 
   if (email) {
     const exists = await prisma.user.findUnique({ where: { email } })
@@ -78,6 +77,9 @@ export async function DELETE(
   if (!session) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
+
+  const adminError = requireAdmin(session)
+  if (adminError) return adminError
 
   if (session.user.id === id) {
     return NextResponse.json({ error: 'Você não pode excluir sua própria conta.' }, { status: 400 })

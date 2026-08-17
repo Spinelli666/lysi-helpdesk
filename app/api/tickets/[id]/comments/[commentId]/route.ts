@@ -2,6 +2,8 @@ import { auth } from '@/app/lib/auth'
 import { prisma } from '@/app/lib/prisma'
 import { sanitizeCommentHtml } from '@/app/lib/sanitize-comment'
 import { COMMENT_INCLUDE } from '@/app/lib/comment-include'
+import { parseBody } from '@/app/lib/parse-body'
+import { updateCommentSchema } from '@/app/lib/schemas'
 import { NextResponse } from 'next/server'
 
 export async function PATCH(
@@ -25,14 +27,10 @@ export async function PATCH(
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const body = await req.json()
-  const rawContent = body?.content
+  const parsed = await parseBody(req, updateCommentSchema)
+  if (parsed.error) return parsed.error
 
-  if (typeof rawContent !== 'string') {
-    return NextResponse.json({ error: 'O comentário não pode ser vazio' }, { status: 400 })
-  }
-
-  const content = sanitizeCommentHtml(rawContent)
+  const content = sanitizeCommentHtml(parsed.data.content)
   const textOnly = content.replace(/<[^>]*>/g, '').trim()
 
   if (textOnly.length === 0) {

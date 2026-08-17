@@ -8,7 +8,8 @@ import { COMMENT_INCLUDE } from '@/app/lib/comment-include'
 import { NextResponse } from 'next/server'
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads')
-const MAX_FILE_SIZE = 10 * 1024 * 1024
+const MAX_FILE_SIZE = 20 * 1024 * 1024
+const MAX_FILES = 10
 
 export async function GET(
   req: Request,
@@ -71,7 +72,11 @@ export async function POST(
 
   const oversized = files.find((f) => f.size > MAX_FILE_SIZE)
   if (oversized) {
-    return NextResponse.json({ error: `O anexo "${oversized.name}" excede o limite de 10 MB` }, { status: 400 })
+    return NextResponse.json({ error: `O anexo "${oversized.name}" excede o limite de 20 MB` }, { status: 400 })
+  }
+
+  if (files.length > MAX_FILES) {
+    return NextResponse.json({ error: `Envie no máximo ${MAX_FILES} arquivos por vez.` }, { status: 400 })
   }
 
   const comment = await prisma.comment.create({

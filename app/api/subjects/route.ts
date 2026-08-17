@@ -1,6 +1,9 @@
 import { auth } from '@/app/lib/auth'
 import { prisma } from '@/app/lib/prisma'
 import { createLog } from '@/app/lib/audit-log'
+import { parseBody } from '@/app/lib/parse-body'
+import { createSubjectSchema } from '@/app/lib/schemas'
+import { requireAdmin } from '@/app/lib/require-admin'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
@@ -25,12 +28,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const body = await req.json()
-  const { name } = body
+  const adminError = requireAdmin(session)
+  if (adminError) return adminError
 
-  if (!name?.trim()) {
-    return NextResponse.json({ error: 'Nome é obrigatório' }, { status: 400 })
-  }
+  const parsed = await parseBody(req, createSubjectSchema)
+  if (parsed.error) return parsed.error
+  const { name } = parsed.data
 
   const exists = await prisma.subject.findUnique({ where: { name } })
   if (exists) {

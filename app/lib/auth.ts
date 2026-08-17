@@ -1,7 +1,12 @@
-import NextAuth from 'next-auth'
+import NextAuth, { CredentialsSignin } from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prisma } from './prisma'
+import { checkRateLimit, recordFailedAttempt, resetAttempts } from './rate-limit'
+
+class RateLimitError extends CredentialsSignin {
+  code = 'rate-limit'
+}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -13,18 +18,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
 
+        const email = credentials.email as string
+
+        if (checkRateLimit(email).blocked) {
+          throw new RateLimitError()
+        }
+
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
+          where: { email },
         })
 
-        if (!user || !user.active) return null
+        if (!user || !user.active) {
+          recordFailedAttempt(email)
+          return null
+        }
 
         const passwordMatch = await bcrypt.compare(
           credentials.password as string,
           user.password
         )
 
-        if (!passwordMatch) return null
+        if (!passwordMatch) {
+          recordFailedAttempt(email)
+          return null
+        }
+
+        resetAttempts(email)
 
         return {
           id: user.id,

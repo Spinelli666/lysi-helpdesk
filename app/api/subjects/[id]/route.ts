@@ -1,6 +1,9 @@
 import { auth } from '@/app/lib/auth'
 import { prisma } from '@/app/lib/prisma'
 import { createLog, diffFields } from '@/app/lib/audit-log'
+import { parseBody } from '@/app/lib/parse-body'
+import { updateSubjectSchema } from '@/app/lib/schemas'
+import { requireAdmin } from '@/app/lib/require-admin'
 import { NextResponse } from 'next/server'
 
 export async function PATCH(
@@ -14,8 +17,12 @@ export async function PATCH(
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const body = await req.json()
-  const { name, active } = body
+  const adminError = requireAdmin(session)
+  if (adminError) return adminError
+
+  const parsed = await parseBody(req, updateSubjectSchema)
+  if (parsed.error) return parsed.error
+  const { name, active } = parsed.data
 
   const existing = await prisma.subject.findUnique({ where: { id } })
   if (!existing) {

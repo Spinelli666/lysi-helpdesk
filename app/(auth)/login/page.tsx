@@ -29,7 +29,11 @@ export default function LoginPage() {
     })
 
     if (result?.error) {
-      setError('Email ou senha incorretos.')
+      setError(
+        result.error === 'rate-limit'
+          ? 'Muitas tentativas de login. Tente novamente em alguns minutos.'
+          : 'Email ou senha incorretos.'
+      )
       setLoading(false)
       return
     }
