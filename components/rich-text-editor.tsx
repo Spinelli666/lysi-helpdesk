@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useEditor, EditorContent, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
@@ -21,6 +21,8 @@ import {
   AlignRight,
   Code as CodeIcon,
   SquareCode as CodeBlockIcon,
+  Heading2,
+  Heading3,
 } from 'lucide-react'
 
 function ToolbarButton({
@@ -47,9 +49,37 @@ function ToolbarButton({
   )
 }
 
-function Toolbar({ editor }: { editor: Editor }) {
+function Toolbar({ editor, onUploadImage }: { editor: Editor; onUploadImage?: (file: File) => Promise<string> }) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+
+  async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !onUploadImage) return
+
+    setUploading(true)
+    try {
+      const url = await onUploadImage(file)
+      editor.chain().focus().setImage({ src: url }).run()
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Erro ao enviar imagem')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   return (
     <div className="flex items-center gap-0.5 border-b p-1.5 flex-wrap">
+      <ToolbarButton title="Título" active={editor.isActive('heading', { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
+        <Heading2 size={16} />
+      </ToolbarButton>
+      <ToolbarButton title="Subtítulo" active={editor.isActive('heading', { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
+        <Heading3 size={16} />
+      </ToolbarButton>
+
+      <span className="w-px h-5 bg-gray-200 mx-1" />
+
       <ToolbarButton title="Negrito" active={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()}>
         <BoldIcon size={16} />
       </ToolbarButton>
@@ -100,15 +130,29 @@ function Toolbar({ editor }: { editor: Editor }) {
         <LinkIcon size={16} />
       </ToolbarButton>
       <ToolbarButton
-        title="Imagem"
+        title={uploading ? 'Enviando imagem...' : 'Imagem'}
         onClick={() => {
+          if (uploading) return
+          if (onUploadImage) {
+            fileInputRef.current?.click()
+            return
+          }
           const url = window.prompt('Endereço da imagem:', 'https://')
           if (!url) return
           editor.chain().focus().setImage({ src: url }).run()
         }}
       >
-        <ImageIcon size={16} />
+        <ImageIcon size={16} className={uploading ? 'animate-pulse' : undefined} />
       </ToolbarButton>
+      {onUploadImage && (
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileSelected}
+        />
+      )}
 
       <span className="w-px h-5 bg-gray-200 mx-1" />
 
@@ -128,17 +172,21 @@ export function RichTextEditor({
   placeholder,
   showToolbar = true,
   onReady,
+  onUploadImage,
 }: {
   value: string
   onChange: (html: string) => void
   placeholder?: string
   showToolbar?: boolean
   onReady?: (editor: Editor) => void
+  onUploadImage?: (file: File) => Promise<string>
 }) {
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        heading: { levels: [2, 3] },
+      }),
       Underline,
       Link.configure({
         openOnClick: false,
@@ -160,7 +208,7 @@ export function RichTextEditor({
 
   return (
     <div className="tiptap-editor border rounded-lg overflow-hidden">
-      {showToolbar && <Toolbar editor={editor} />}
+      {showToolbar && <Toolbar editor={editor} onUploadImage={onUploadImage} />}
       <EditorContent editor={editor} className="tiptap-content px-3 py-2 text-sm" />
     </div>
   )

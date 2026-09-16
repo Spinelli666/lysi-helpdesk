@@ -13,11 +13,11 @@ export async function GET() {
   }
 
   const tickets = await prisma.ticket.findMany({
-    orderBy: { createdAt: 'desc' },
+    orderBy: { startedAt: 'desc' },
     include: {
       createdBy: { select: { id: true, name: true } },
       subject: { select: { id: true, name: true } },
-      employee: { select: { id: true, name: true } },
+      employee: { select: { id: true, name: true, department: true } },
     },
   })
 
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
 
   const parsed = await parseBody(req, createTicketSchema)
   if (parsed.error) return parsed.error
-  const { title, description, subjectId, employeeId } = parsed.data
+  const { title, description, subjectId, employeeId, startedAt, endedAt } = parsed.data
 
   const subject = await prisma.subject.findUnique({ where: { id: subjectId } })
 
@@ -54,6 +54,8 @@ export async function POST(req: Request) {
       subjectId,
       employeeId,
       createdById: session.user.id,
+      startedAt: new Date(startedAt),
+      endedAt: new Date(endedAt),
     },
     include: {
       createdBy: { select: { id: true, name: true } },

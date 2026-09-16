@@ -44,6 +44,8 @@ model Ticket {
   number      Int          @unique @default(autoincrement())
   title       String
   description String
+  startedAt   DateTime
+  endedAt     DateTime
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   subjectId   String
@@ -80,6 +82,31 @@ model Attachment {
   ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 }
 
+model DocumentationTopic {
+  id            String                  @id @default(cuid())
+  title         String
+  content       String                  @default("")
+  order         Int                     @default(0)
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  updatedById   String?
+  updatedByName String?
+  subtopics     DocumentationSubtopic[]
+}
+
+model DocumentationSubtopic {
+  id            String             @id @default(cuid())
+  title         String
+  content       String             @default("")
+  order         Int                @default(0)
+  topicId       String
+  topic         DocumentationTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  updatedById   String?
+  updatedByName String?
+}
+
 model Log {
   id          String     @id @default(cuid())
   action      LogAction
@@ -112,4 +139,5 @@ enum LogEntity {
   EMPLOYEE
   USER
   SUBJECT
+  DOCUMENTATION
 }

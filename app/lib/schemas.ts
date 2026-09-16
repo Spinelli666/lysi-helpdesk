@@ -8,12 +8,19 @@ const userEmailSchema = z
   .refine(isValidEmail, EMAIL_ERROR)
   .refine(isAllowedEmailDomain, EMAIL_ERROR)
 
-export const createTicketSchema = z.object({
-  title: z.string().trim().min(1, 'Preencha todos os campos.'),
-  description: z.string().trim().min(1, 'Preencha todos os campos.'),
-  subjectId: z.string().min(1, 'Preencha todos os campos.'),
-  employeeId: z.string().min(1, 'Preencha todos os campos.'),
-})
+export const createTicketSchema = z
+  .object({
+    title: z.string().trim().min(1, 'Preencha todos os campos.'),
+    description: z.string().trim().min(1, 'Preencha todos os campos.'),
+    subjectId: z.string().min(1, 'Preencha todos os campos.'),
+    employeeId: z.string().min(1, 'Preencha todos os campos.'),
+    startedAt: z.iso.datetime({ local: true, message: 'Informe o horário de início.' }),
+    endedAt: z.iso.datetime({ local: true, message: 'Informe o horário de término.' }),
+  })
+  .refine((data) => new Date(data.endedAt) >= new Date(data.startedAt), {
+    message: 'O horário de término deve ser depois do horário de início.',
+    path: ['endedAt'],
+  })
 
 export const createEmployeeSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -77,4 +84,25 @@ export const updateSubjectSchema = z.object({
 
 export const updateCommentSchema = z.object({
   content: z.string(),
+})
+
+export const createDocumentationTopicSchema = z.object({
+  title: z.string().trim().min(1, 'Título é obrigatório'),
+})
+
+export const updateDocumentationTopicSchema = z.object({
+  title: z.string().trim().min(1, 'Título é obrigatório').optional(),
+  content: z.string().optional(),
+  order: z.number().int().optional(),
+})
+
+export const createDocumentationSubtopicSchema = z.object({
+  topicId: z.string().min(1, 'Tópico é obrigatório'),
+  title: z.string().trim().min(1, 'Título é obrigatório'),
+})
+
+export const updateDocumentationSubtopicSchema = z.object({
+  title: z.string().trim().min(1, 'Título é obrigatório').optional(),
+  content: z.string().optional(),
+  order: z.number().int().optional(),
 })

@@ -1,7 +1,7 @@
 import DOMPurify from 'isomorphic-dompurify'
 
 const SANITIZE_CONFIG = {
-  ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'ul', 'ol', 'li', 'a', 'img', 'blockquote', 'code', 'pre'],
+  ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'ul', 'ol', 'li', 'a', 'img', 'blockquote', 'code', 'pre', 'h2', 'h3', 'hr'],
   ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'style'],
 }
 

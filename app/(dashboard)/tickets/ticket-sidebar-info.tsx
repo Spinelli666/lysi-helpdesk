@@ -1,13 +1,22 @@
+function formatDuration(startedAt: string, endedAt: string) {
+  const minutes = Math.round((new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 60000)
+  const hours = Math.floor(minutes / 60)
+  const remainingMinutes = minutes % 60
+  return hours > 0 ? `${hours}h ${remainingMinutes}min` : `${remainingMinutes}min`
+}
+
 export function TicketSidebarInfo({
   createdBy,
   subject,
   employee,
-  createdAt,
+  startedAt,
+  endedAt,
 }: {
   createdBy: { name: string; email: string }
   subject: { name: string }
   employee: { name: string } | null
-  createdAt: string
+  startedAt: string
+  endedAt: string
 }) {
   return (
     <div className="space-y-4">
@@ -37,9 +46,15 @@ export function TicketSidebarInfo({
             <p className="text-gray-800 mt-0.5">{employee?.name ?? '—'}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-400 uppercase tracking-wide">Criado em</p>
+            <p className="text-xs text-gray-400 uppercase tracking-wide">Início do atendimento</p>
             <p className="text-gray-800 mt-0.5">
-              {new Date(createdAt).toLocaleString('pt-BR')}
+              {new Date(startedAt).toLocaleString('pt-BR')}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400 uppercase tracking-wide">Tempo de atendimento</p>
+            <p className="text-gray-800 mt-0.5">
+              {formatDuration(startedAt, endedAt)}
             </p>
           </div>
         </div>

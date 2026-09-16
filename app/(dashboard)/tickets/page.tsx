@@ -2,18 +2,20 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { EyeIcon } from 'lucide-react'
+import { EyeIcon, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { NewTicketDialog } from './new-ticket-dialog'
+import { ExportTicketsDialog } from './export-tickets-dialog'
 import { TicketDetailView } from './ticket-detail-view'
 
 type Ticket = {
   id: string
   number: number
   title: string
-  createdAt: string
+  startedAt: string
   subject: { id: string; name: string }
   employee: { id: string; name: string } | null
   createdBy: { id: string; name: string }
@@ -24,6 +26,7 @@ export default function TicketsPage() {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
   const [viewingTicketId, setViewingTicketId] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
 
   async function fetchTickets() {
     const res = await fetch('/api/tickets')
@@ -34,11 +37,36 @@ export default function TicketsPage() {
 
   useEffect(() => { fetchTickets() }, [])
 
+  const filteredTickets = tickets.filter((ticket) => {
+    const term = search.trim().toLowerCase()
+    if (!term) return true
+    return (
+      ticket.title.toLowerCase().includes(term) ||
+      String(ticket.number).padStart(6, '0').includes(term) ||
+      ticket.subject.name.toLowerCase().includes(term) ||
+      (ticket.employee?.name.toLowerCase().includes(term) ?? false) ||
+      ticket.createdBy.name.toLowerCase().includes(term)
+    )
+  })
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-heading font-bold">Chamados</h1>
-        <NewTicketDialog onCreated={fetchTickets} />
+        <div className="flex items-center gap-2">
+          <ExportTicketsDialog />
+          <NewTicketDialog onCreated={fetchTickets} />
+        </div>
+      </div>
+
+      <div className="relative mb-4 max-w-sm">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Input
+          placeholder="Pesquisar por título, nº, assunto ou funcionário..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
       </div>
 
       {loading ? (
@@ -48,6 +76,11 @@ export default function TicketsPage() {
           <p className="text-4xl mb-3">📋</p>
           <p className="font-medium">Nenhum chamado encontrado</p>
           <p className="text-sm mt-1">Registre um atendimento para começar</p>
+        </div>
+      ) : filteredTickets.length === 0 ? (
+        <div className="text-center py-16 text-gray-400">
+          <p className="text-4xl mb-3">🔍</p>
+          <p className="font-medium">Nenhum chamado encontrado para essa pesquisa</p>
         </div>
       ) : (
         <div className="border rounded-lg overflow-hidden">
@@ -64,7 +97,7 @@ export default function TicketsPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {tickets.map((ticket) => (
+              {filteredTickets.map((ticket) => (
                 <tr
                   key={ticket.id}
                   className="hover:bg-gray-50 cursor-pointer"
@@ -78,7 +111,7 @@ export default function TicketsPage() {
                   <td className="px-4 py-3 text-center text-gray-500">{ticket.employee?.name ?? '—'}</td>
                   <td className="px-4 py-3 text-center text-gray-500">{ticket.createdBy.name}</td>
                   <td className="px-4 py-3 text-center text-gray-400 text-xs">
-                    {new Date(ticket.createdAt).toLocaleDateString('pt-BR')}
+                    {new Date(ticket.startedAt).toLocaleDateString('pt-BR')}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <Tooltip>

@@ -147,6 +147,27 @@
   }
 }
 
+.tiptap-content h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 1.25rem 0 0.5rem;
+}
+.tiptap-content h2:first-child {
+  margin-top: 0;
+}
+.tiptap-content h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 1rem 0 0.4rem;
+}
+.tiptap-content h3:first-child {
+  margin-top: 0;
+}
+.tiptap-content hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 1rem 0;
+}
 .tiptap-content p {
   margin: 0 0 0.5rem;
 }

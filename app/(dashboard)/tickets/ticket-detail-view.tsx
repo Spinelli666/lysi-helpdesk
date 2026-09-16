@@ -12,7 +12,8 @@ type Ticket = {
   number: number
   title: string
   description: string
-  createdAt: string
+  startedAt: string
+  endedAt: string
   subject: { id: string; name: string }
   employee: { id: string; name: string } | null
   createdBy: { id: string; name: string; email: string }
@@ -105,7 +106,8 @@ export function TicketDetailView({
               createdBy={ticket.createdBy}
               subject={ticket.subject}
               employee={ticket.employee}
-              createdAt={ticket.createdAt}
+              startedAt={ticket.startedAt}
+              endedAt={ticket.endedAt}
             />
           )}
 
@@ -122,7 +124,8 @@ export function TicketDetailView({
               createdBy={ticket.createdBy}
               subject={ticket.subject}
               employee={ticket.employee}
-              createdAt={ticket.createdAt}
+              startedAt={ticket.startedAt}
+              endedAt={ticket.endedAt}
             />
           </div>
         )}

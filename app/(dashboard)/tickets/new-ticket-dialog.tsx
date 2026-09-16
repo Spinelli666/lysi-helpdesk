@@ -12,6 +12,18 @@ import { NewEmployeeDialog } from '../employees/new-employee-dialog'
 type Subject = { id: string; name: string; active: boolean }
 type Employee = { id: string; name: string; active: boolean }
 
+function todayInputValue() {
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+}
+
+function nowTimeInputValue() {
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(now.getHours())}:${pad(now.getMinutes())}`
+}
+
 export function NewTicketDialog({ onCreated }: { onCreated: () => void | Promise<void> }) {
   const [open, setOpen] = useState(false)
   const [subjects, setSubjects] = useState<Subject[]>([])
@@ -20,6 +32,9 @@ export function NewTicketDialog({ onCreated }: { onCreated: () => void | Promise
   const [employeeId, setEmployeeId] = useState('')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [date, setDate] = useState('')
+  const [startTime, setStartTime] = useState('')
+  const [endTime, setEndTime] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -42,13 +57,21 @@ export function NewTicketDialog({ onCreated }: { onCreated: () => void | Promise
     setEmployeeId('')
     setTitle('')
     setDescription('')
+    setDate(todayInputValue())
+    setStartTime(nowTimeInputValue())
+    setEndTime(nowTimeInputValue())
     setError('')
     setOpen(true)
   }
 
   async function handleSave() {
-    if (!subjectId || !employeeId || !title.trim() || !description.trim()) {
+    if (!subjectId || !employeeId || !title.trim() || !description.trim() || !date || !startTime || !endTime) {
       setError('Preencha todos os campos.')
+      return
+    }
+
+    if (endTime < startTime) {
+      setError('O horário de término deve ser depois do horário de início.')
       return
     }
 
@@ -58,7 +81,14 @@ export function NewTicketDialog({ onCreated }: { onCreated: () => void | Promise
     const res = await fetch('/api/tickets', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subjectId, employeeId, title, description }),
+      body: JSON.stringify({
+        subjectId,
+        employeeId,
+        title,
+        description,
+        startedAt: `${date}T${startTime}`,
+        endedAt: `${date}T${endTime}`,
+      }),
     })
 
     if (!res.ok) {
@@ -125,6 +155,32 @@ export function NewTicketDialog({ onCreated }: { onCreated: () => void | Promise
             <div className="space-y-1">
               <Label>Descrição *</Label>
               <Textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
+            </div>
+
+            <div className="space-y-1">
+              <Label>Data do atendimento *</Label>
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full sm:w-48" />
+            </div>
+
+            <div className="flex items-end gap-3">
+              <div className="space-y-1 flex-1">
+                <Label>Início *</Label>
+                <div className="flex gap-1.5">
+                  <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+                  <Button type="button" variant="outline" size="sm" onClick={() => setStartTime(nowTimeInputValue())}>
+                    Agora
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-1 flex-1">
+                <Label>Fim *</Label>
+                <div className="flex gap-1.5">
+                  <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+                  <Button type="button" variant="outline" size="sm" onClick={() => setEndTime(nowTimeInputValue())}>
+                    Agora
+                  </Button>
+                </div>
+              </div>
             </div>
 
             {error && <p className="text-sm text-red-500">{error}</p>}

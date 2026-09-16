@@ -10,10 +10,10 @@ type Ticket = {
   id: string
   number: number
   title: string
-  createdAt: string
+  startedAt: string
   subject: { id: string; name: string }
   createdBy: { id: string; name: string }
-  employee: { id: string; name: string } | null
+  employee: { id: string; name: string; department: string | null } | null
 }
 
 function monthKey(date: Date) {
@@ -124,7 +124,7 @@ function AreaChart({ data }: { data: { label: string; count: number }[] }) {
 
   return (
     <div>
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-40">
+      <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="w-full h-40">
         <path d={areaPath} fill={BRAND} opacity="0.08" />
         <path d={linePath} fill="none" stroke={BRAND} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         {points.map((p, i) => (
@@ -133,9 +133,15 @@ function AreaChart({ data }: { data: { label: string; count: number }[] }) {
           </circle>
         ))}
       </svg>
-      <div className="flex justify-between text-xs text-gray-400 mt-1">
+      <div className="relative h-4 mt-1 text-xs text-gray-400">
         {points.filter((_, i) => labeledIndexes.has(i)).map((p) => (
-          <span key={p.label}>{p.label}</span>
+          <span
+            key={p.label}
+            className="absolute -translate-x-1/2 whitespace-nowrap first:translate-x-0 last:-translate-x-full"
+            style={{ left: `${(p.x / width) * 100}%` }}
+          >
+            {p.label}
+          </span>
         ))}
       </div>
     </div>
@@ -165,7 +171,7 @@ export default function DashboardPage() {
 
   const filteredTickets = useMemo(() => {
     return tickets.filter((t) => {
-      const key = monthKey(new Date(t.createdAt))
+      const key = monthKey(new Date(t.startedAt))
       if (fromMonth && key < fromMonth) return false
       if (toMonth && key > toMonth) return false
       return true
@@ -176,7 +182,7 @@ export default function DashboardPage() {
 
   const todayCount = useMemo(() => {
     const todayKey = dayKey(new Date())
-    return filteredTickets.filter((t) => dayKey(new Date(t.createdAt)) === todayKey).length
+    return filteredTickets.filter((t) => dayKey(new Date(t.startedAt)) === todayKey).length
   }, [filteredTickets])
 
   const subjectData = useMemo(() => {
@@ -192,6 +198,17 @@ export default function DashboardPage() {
       .map(([label, count]) => ({ label, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 8)
+  }, [filteredTickets])
+
+  const departmentData = useMemo(() => {
+    const counts = countBy(
+      filteredTickets
+        .filter((t): t is Ticket & { employee: { department: string } } => !!t.employee?.department)
+        .map((t) => t.employee.department)
+    )
+    return Object.entries(counts)
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count)
   }, [filteredTickets])
 
   const topSubject = subjectData[0]?.label ?? '—'
@@ -211,7 +228,7 @@ export default function DashboardPage() {
   }, [filteredTickets])
 
   const effectiveFromMonth = useMemo(() => {
-    const keys = filteredTickets.map((t) => monthKey(new Date(t.createdAt)))
+    const keys = filteredTickets.map((t) => monthKey(new Date(t.startedAt)))
     return fromMonth || keys.reduce((min, k) => (k < min ? k : min), CURRENT_MONTH)
   }, [filteredTickets, fromMonth])
 
@@ -219,7 +236,7 @@ export default function DashboardPage() {
 
   const monthlyData = useMemo(() => {
     const range = monthRange(effectiveFromMonth, effectiveToMonth)
-    const counts = countBy(filteredTickets.map((t) => monthKey(new Date(t.createdAt))))
+    const counts = countBy(filteredTickets.map((t) => monthKey(new Date(t.startedAt))))
     return range.map((k) => ({ label: monthLabel(k), count: counts[k] ?? 0 }))
   }, [filteredTickets, effectiveFromMonth, effectiveToMonth])
 
@@ -233,7 +250,7 @@ export default function DashboardPage() {
     const days = dayRange(startDate, endDate)
     const counts: Record<string, number> = {}
     for (const t of filteredTickets) {
-      const key = dayKey(new Date(t.createdAt))
+      const key = dayKey(new Date(t.startedAt))
       counts[key] = (counts[key] ?? 0) + 1
     }
     return days.map((d) => ({
@@ -243,7 +260,7 @@ export default function DashboardPage() {
   }, [filteredTickets, effectiveFromMonth, effectiveToMonth])
 
   const recentTickets = useMemo(
-    () => [...filteredTickets].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 8),
+    () => [...filteredTickets].sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()).slice(0, 8),
     [filteredTickets]
   )
 
@@ -354,7 +371,7 @@ export default function DashboardPage() {
         <AreaChart data={granularity === 'month' ? monthlyData : dailyData} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="border rounded-lg p-4">
           <p className="text-sm font-semibold text-gray-700 mb-3">Chamados por assunto</p>
           {subjectData.length === 0 ? (
@@ -370,6 +387,15 @@ export default function DashboardPage() {
             <p className="text-sm text-gray-500">Nenhum chamado no período.</p>
           ) : (
             <HorizontalBars data={agentData} />
+          )}
+        </div>
+
+        <div className="border rounded-lg p-4">
+          <p className="text-sm font-semibold text-gray-700 mb-3">Chamados por departamento</p>
+          {departmentData.length === 0 ? (
+            <p className="text-sm text-gray-500">Nenhum chamado no período.</p>
+          ) : (
+            <HorizontalBars data={departmentData} />
           )}
         </div>
       </div>

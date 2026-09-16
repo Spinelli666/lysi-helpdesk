@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 type LogEntry = {
   id: string
   action: 'CREATE' | 'UPDATE' | 'DELETE' | 'TOGGLE'
-  entityType: 'TICKET' | 'EMPLOYEE' | 'USER' | 'SUBJECT'
+  entityType: 'TICKET' | 'EMPLOYEE' | 'USER' | 'SUBJECT' | 'DOCUMENTATION'
   entityId: string
   entityLabel: string
   changes: Record<string, { before: unknown; after: unknown }> | null
@@ -24,6 +24,7 @@ const ENTITY_LABELS: Record<LogEntry['entityType'], string> = {
   EMPLOYEE: 'Funcionário',
   USER: 'Usuário',
   SUBJECT: 'Assunto',
+  DOCUMENTATION: 'Documentação',
 }
 
 const ACTION_LABELS: Record<LogEntry['action'], string> = {
@@ -100,6 +101,7 @@ export default function LogsPage() {
             <SelectItem value="EMPLOYEE">Funcionários</SelectItem>
             <SelectItem value="USER">Usuários</SelectItem>
             <SelectItem value="SUBJECT">Assuntos</SelectItem>
+            <SelectItem value="DOCUMENTATION">Documentação</SelectItem>
           </SelectContent>
         </Select>
 

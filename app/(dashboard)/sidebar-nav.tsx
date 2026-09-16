@@ -6,6 +6,7 @@ import Link from 'next/link'
 const links = [
   { href: '/tickets', label: 'Chamados' },
   { href: '/dashboard', label: 'Dashboard' },
+  { href: '/documentation', label: 'Documentação' },
   { href: '/admin/users', label: 'Usuários', adminOnly: true },
   { href: '/employees', label: 'Funcionários' },
   { href: '/admin/subjects', label: 'Assuntos', adminOnly: true },

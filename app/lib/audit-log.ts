@@ -9,7 +9,7 @@ type ActorSession = {
   }
 }
 
-type EntityType = 'TICKET' | 'EMPLOYEE' | 'USER' | 'SUBJECT'
+type EntityType = 'TICKET' | 'EMPLOYEE' | 'USER' | 'SUBJECT' | 'DOCUMENTATION'
 type ActionType = 'CREATE' | 'UPDATE' | 'DELETE' | 'TOGGLE'
 type FieldChanges = Record<string, { before: unknown; after: unknown }>
 
